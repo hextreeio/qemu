@@ -69,6 +69,7 @@
 
 char *exec_path;
 char real_exec_path[PATH_MAX];
+char resolved_path[PATH_MAX];
 
 static bool opt_one_insn_per_tb;
 static unsigned long opt_tb_size;
@@ -691,6 +692,39 @@ static int parse_args(int argc, char **argv)
 
     return optind;
 }
+char *find_in_path(const char *bin);
+char *find_in_path(const char *bin) {
+    if (!bin || !*bin)
+        return NULL;
+
+    const char *path = getenv("PATH");
+    if (!path)
+        return NULL;
+
+    // We will duplicate PATH because strtok modifies the string
+    char *path_dup = strdup(path);
+    if (!path_dup)
+        return NULL;
+
+    char *saveptr = NULL;
+    char *dir = strtok_r(path_dup, ":", &saveptr);
+
+    while (dir) {
+        size_t len = strlen(dir) + 1 + strlen(bin) + 1; // dir + "/" + bin + "\0"
+        snprintf(resolved_path, len, "%s/%s", dir, bin);
+
+        // Check if file is accessible (exists + executable)
+        if (access(resolved_path, X_OK) == 0) {
+            free(path_dup);
+            return resolved_path;  // caller must free()
+        }
+
+        dir = strtok_r(NULL, ":", &saveptr);
+    }
+
+    free(path_dup);
+    return NULL;
+}
 
 int main(int argc, char **argv, char **envp)
 {
@@ -783,6 +817,14 @@ int main(int argc, char **argv, char **envp)
     errno = 0;
     execfd = qemu_getauxval(AT_EXECFD);
     if (errno != 0) {
+        if (access(exec_path, X_OK) != 0) {
+            // attempt to find in path
+            char *resolved_path = find_in_path(exec_path);
+            if(resolved_path) {
+                exec_path = resolved_path;
+            }
+        }
+
         execfd = open(exec_path, O_RDONLY);
         if (execfd < 0) {
             printf("Error while loading %s: %s\n", exec_path, strerror(errno));
