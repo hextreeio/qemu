@@ -13,9 +13,11 @@
 #include "tinyhook.h"
 #include "qemu.h"
 
-#ifdef CONFIG_TINYHOOK
 #define PY_SSIZE_T_CLEAN
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
 #include <Python.h>
+#pragma GCC diagnostic pop
 
 static bool g_tinyhook_enabled = false;
 static PyObject *g_module = NULL;
@@ -509,40 +511,3 @@ abi_long tinyhook_post_syscall(CPUArchState *cpu_env, int num,
     Py_DECREF(py_result);
     return new_ret;
 }
-
-#else /* !CONFIG_TINYHOOK */
-
-int tinyhook_init(const char *script_path)
-{
-    fprintf(stderr, "tinyhook: not compiled with Python support\n");
-    return -1;
-}
-
-void tinyhook_shutdown(void)
-{
-}
-
-bool tinyhook_enabled(void)
-{
-    return false;
-}
-
-bool tinyhook_pre_syscall(CPUArchState *cpu_env, int num,
-                          abi_long arg1, abi_long arg2, abi_long arg3,
-                          abi_long arg4, abi_long arg5, abi_long arg6,
-                          abi_long arg7, abi_long arg8,
-                          TinyHookResult *result)
-{
-    return false;
-}
-
-abi_long tinyhook_post_syscall(CPUArchState *cpu_env, int num,
-                               abi_long ret,
-                               abi_long arg1, abi_long arg2, abi_long arg3,
-                               abi_long arg4, abi_long arg5, abi_long arg6,
-                               abi_long arg7, abi_long arg8)
-{
-    return ret;
-}
-
-#endif /* CONFIG_TINYHOOK */

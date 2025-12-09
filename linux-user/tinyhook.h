@@ -14,6 +14,7 @@
 
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "user/abitypes.h"
 
 /*
  * Hook action - determines what happens after the Python hook returns

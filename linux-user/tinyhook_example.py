@@ -134,14 +134,14 @@ def on_read_post(syscall_num, ret, fd, buf, count, arg4, arg5, arg6, arg7, arg8)
 print("[tinyhook] Registering syscall hooks...")
 
 # Hook write syscall (both pre and post)
-tinyhook.register_pre_hook(SYS_WRITE, on_write_pre)
-tinyhook.register_post_hook(SYS_WRITE, on_write_post)
+# tinyhook.register_pre_hook(SYS_WRITE, on_write_pre)
+# tinyhook.register_post_hook(SYS_WRITE, on_write_post)
 
-# Hook open syscall (pre only - to demonstrate blocking)
-tinyhook.register_pre_hook(SYS_OPEN, on_open_pre)
+# # Hook open syscall (pre only - to demonstrate blocking)
+# tinyhook.register_pre_hook(SYS_OPEN, on_open_pre)
 
-# Hook openat syscall (pre only)
-tinyhook.register_pre_hook(SYS_OPENAT, on_openat_pre)
+# # Hook openat syscall (pre only)
+# tinyhook.register_pre_hook(SYS_OPENAT, on_openat_pre)
 
 # Hook read syscall (post only - to inspect data)
 tinyhook.register_post_hook(SYS_READ, on_read_post)

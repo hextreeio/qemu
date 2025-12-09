@@ -25,7 +25,9 @@ linux_user_ss.add(files(
 linux_user_ss.add(rt)
 linux_user_ss.add(libdw)
 
-python3_embed = dependency('python3-embed', required: true)
+# Python embedding - use shared library to avoid static linking nightmares
+# Python 3.12+ has complex dependencies (HACL*, etc.) that make static linking impractical
+python3_embed = dependency('python3-embed', required: true, static: false)
 linux_user_ss.add(python3_embed)
 
 
