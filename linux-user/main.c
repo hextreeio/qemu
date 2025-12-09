@@ -817,17 +817,19 @@ int main(int argc, char **argv, char **envp)
     errno = 0;
     execfd = qemu_getauxval(AT_EXECFD);
     if (errno != 0) {
+        // It's *not* called via binfmt
         if (access(exec_path, X_OK) != 0) {
             // attempt to find in path
             char *resolved_path = find_in_path(exec_path);
             if(resolved_path) {
                 exec_path = resolved_path;
+                printf("Loading real path %s\n", exec_path);
             }
         }
-
+        printf("Loading: %s\n", exec_path);
         execfd = open(exec_path, O_RDONLY);
         if (execfd < 0) {
-            printf("Error while loading %s: %s\n", exec_path, strerror(errno));
+            printf("Error while loading non-binfmt %s: %s\n", exec_path, strerror(errno));
             _exit(EXIT_FAILURE);
         }
     }
