@@ -57,6 +57,7 @@
 #include "user-mmap.h"
 #include "tcg/perf.h"
 #include "exec/page-vary.h"
+#include "tinyhook.h"
 
 #ifdef CONFIG_SEMIHOSTING
 #include "semihosting/semihost.h"
@@ -93,6 +94,11 @@ char **qemu_argv;
  * -strace, or vice versa.
  */
 static bool enable_strace;
+
+/*
+ * TinyHook Python script path
+ */
+static const char *tinyhook_script;
 
 /*
  * The last log mask given by the user in an environment variable or argument.
@@ -461,6 +467,11 @@ static void handle_arg_jitdump(const char *arg)
     perf_enable_jitdump();
 }
 
+static void handle_arg_tinyhook(const char *arg)
+{
+    tinyhook_script = strdup(arg);
+}
+
 static void handle_arg_qemu_children(const char *arg)
 {
     qemu_dup_for_children = true;
@@ -544,6 +555,8 @@ static const struct qemu_argument arg_table[] = {
      "",           "Generate a /tmp/perf-${pid}.map file for perf"},
     {"jitdump",    "QEMU_JITDUMP",     false, handle_arg_jitdump,
      "",           "Generate a jit-${pid}.dump file for perf"},
+    {"tinyhook",   "QEMU_TINYHOOK",    true,  handle_arg_tinyhook,
+     "script.py",  "Load Python script for syscall hooking"},
     {"qemu-children",
                    "QEMU_CHILDREN",    false, handle_arg_qemu_children,
      "",           "Run child processes (created with execve) with qemu "
@@ -800,6 +813,14 @@ int main(int argc, char **argv, char **envp)
     }
     trace_init_file();
     qemu_plugin_load_list(&plugins, &error_fatal);
+
+    /* Initialize tinyhook if a script was provided */
+    if (tinyhook_script) {
+        if (tinyhook_init(tinyhook_script) != 0) {
+            fprintf(stderr, "Failed to initialize tinyhook\n");
+            exit(1);
+        }
+    }
 
     /* Zero out image_info */
     memset(info, 0, sizeof(struct image_info));

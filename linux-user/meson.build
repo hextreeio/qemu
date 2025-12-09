@@ -18,11 +18,16 @@ linux_user_ss.add(files(
   'strace.c',
   'syscall.c',
   'thunk.c',
+  'tinyhook.c',
   'uaccess.c',
   'uname.c',
 ))
 linux_user_ss.add(rt)
 linux_user_ss.add(libdw)
+
+python3_embed = dependency('python3-embed', required: true)
+linux_user_ss.add(python3_embed)
+
 
 linux_user_ss.add(when: 'TARGET_HAS_BFLT', if_true: files('flatload.c'))
 linux_user_ss.add(when: 'TARGET_I386', if_true: files('vm86.c'))
