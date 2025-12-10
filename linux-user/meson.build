@@ -25,10 +25,35 @@ linux_user_ss.add(files(
 linux_user_ss.add(rt)
 linux_user_ss.add(libdw)
 
-# Python embedding - use shared library to avoid static linking nightmares
-# Python 3.12+ has complex dependencies (HACL*, etc.) that make static linking impractical
-python3_embed = dependency('python3-embed', required: true, static: false)
+# Python embedding for TinyHook
+# For static builds with Python 3.10 or earlier, we can link statically
+# For Python 3.11+, use dynamic linking due to HACL* dependencies
+python3_embed = dependency('python3-embed', required: true)
 linux_user_ss.add(python3_embed)
+
+# For static builds, add Python's dependencies
+if get_option('prefer_static')
+  # Additional libraries needed for static Python linking
+  foreach dep_name : ['expat', 'z', 'bz2', 'lzma', 'sqlite3', 'readline', 'ncurses']
+    dep = dependency(dep_name, required: false)
+    if dep.found()
+      linux_user_ss.add(dep)
+    else
+      lib = cc.find_library(dep_name, required: false)
+      if lib.found()
+        linux_user_ss.add(lib)
+      endif
+    endif
+  endforeach
+  
+  # Also try common library names
+  foreach libname : ['ffi', 'util', 'dl', 'm', 'pthread', 'ssl', 'crypto']
+    lib = cc.find_library(libname, required: false)
+    if lib.found()
+      linux_user_ss.add(lib)
+    endif
+  endforeach
+endif
 
 
 linux_user_ss.add(when: 'TARGET_HAS_BFLT', if_true: files('flatload.c'))
