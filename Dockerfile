@@ -9,8 +9,3 @@ RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
 
 WORKDIR /qemu
-
-# Build with: docker build -t tinyhook .
-# Run with: docker run -it --rm -v `pwd`:/qemu tinyhook /bin/bash
-# Configure:
-# RUN ./configure --static --enable-linux-user --disable-system --disable-brlapi --disable-gtk --disable-libiscsi --disable-libnfs --disable-pa --disable-rbd --disable-sdl --disable-snappy --disable-vnc --disable-gio --disable-tools
