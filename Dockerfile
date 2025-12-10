@@ -39,16 +39,22 @@ RUN wget https://github.com/libffi/libffi/releases/download/v3.4.4/libffi-3.4.4.
     make install && \
     cd .. && rm -rf libffi-3.4.4*
 
-# Build Python 3.11 from source with static library and frozen stdlib
+# Build Python 3.11 from source with static library and frozen stdlib (including encodings)
 WORKDIR /tmp
 RUN wget https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tar.xz && \
     tar xf Python-3.11.9.tar.xz && \
     cd Python-3.11.9 && \
+    # Patch freeze_modules.py to include encodings in frozen modules
+    # The encodings module is commented out by default, we need to enable it
+    sed -i "s/#'<encodings\.\*>'/'<encodings.*>'/" Tools/scripts/freeze_modules.py && \
+    # Configure Python (need to do this before regen-frozen)
     ./configure \
         --prefix=/opt/python-static \
         --disable-shared \
-        --with-freeze-all \
         CFLAGS="-fPIC" && \
+    # Regenerate frozen modules to include encodings
+    make regen-frozen && \
+    # Build and install
     make -j$(nproc) && \
     make install && \
     cd .. && \
