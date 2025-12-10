@@ -25,9 +25,19 @@ linux_user_ss.add(files(
 linux_user_ss.add(rt)
 linux_user_ss.add(libdw)
 
-# Python embedding for TinyHook
-python3_embed = dependency('python3-embed', required: true)
+# Python embedding for TinyHook (static linking)
+python3_embed = dependency('python3-embed', required: true, static: get_option('prefer_static'))
 linux_user_ss.add(python3_embed)
+
+# Additional libraries needed for static Python
+if get_option('prefer_static')
+  linux_user_ss.add(cc.find_library('pthread', required: true))
+  linux_user_ss.add(cc.find_library('dl', required: true))
+  linux_user_ss.add(cc.find_library('util', required: true))
+  linux_user_ss.add(cc.find_library('m', required: true))
+  linux_user_ss.add(cc.find_library('z', required: false))
+  linux_user_ss.add(cc.find_library('ffi', required: false))
+endif
 
 linux_user_ss.add(when: 'TARGET_HAS_BFLT', if_true: files('flatload.c'))
 linux_user_ss.add(when: 'TARGET_I386', if_true: files('vm86.c'))
