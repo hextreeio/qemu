@@ -39,41 +39,42 @@ RUN wget https://github.com/libffi/libffi/releases/download/v3.4.4/libffi-3.4.4.
     make install && \
     cd .. && rm -rf libffi-3.4.4*
 
-# Build Python 3.10 from source with static library
+# Build Python 3.11 from source with static library and frozen stdlib
 WORKDIR /tmp
-RUN wget https://www.python.org/ftp/python/3.10.13/Python-3.10.13.tar.xz && \
-    tar xf Python-3.10.13.tar.xz && \
-    cd Python-3.10.13 && \
+RUN wget https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tar.xz && \
+    tar xf Python-3.11.9.tar.xz && \
+    cd Python-3.11.9 && \
     ./configure \
         --prefix=/opt/python-static \
         --disable-shared \
+        --with-freeze-all \
         CFLAGS="-fPIC" && \
     make -j$(nproc) && \
     make install && \
     cd .. && \
-    rm -rf Python-3.10.13 Python-3.10.13.tar.xz
+    rm -rf Python-3.11.9 Python-3.11.9.tar.xz
 
 # Install Python packages needed for QEMU build using system Python
 RUN pip3 install tomli pycotap --break-system-packages
 
 # Create pkg-config file for static Python embedding
 RUN rm -f /opt/python-static/lib/pkgconfig/python3-embed.pc \
-          /opt/python-static/lib/pkgconfig/python-3.10-embed.pc && \
+          /opt/python-static/lib/pkgconfig/python-3.11-embed.pc && \
     cat > /opt/python-static/lib/pkgconfig/python3-embed.pc << 'PKGEOF'
 prefix=/opt/python-static
 exec_prefix=${prefix}
 libdir=${prefix}/lib
-includedir=${prefix}/include/python3.10
+includedir=${prefix}/include/python3.11
 
 Name: Python
 Description: Embed Python into your application (static)
-Version: 3.10.13
+Version: 3.11.9
 Cflags: -I${includedir}
-Libs: -L${libdir} -l:libpython3.10.a -lpthread -lm -lz -lffi -lutil
+Libs: -L${libdir} -l:libpython3.11.a -lpthread -lm -lz -lffi -lutil
 PKGEOF
 
 # Create the symlink to match expected names
-RUN ln -s python3-embed.pc /opt/python-static/lib/pkgconfig/python-3.10-embed.pc
+RUN ln -s python3-embed.pc /opt/python-static/lib/pkgconfig/python-3.11-embed.pc
 
 # Set PKG_CONFIG_PATH but keep system Python for build tools
 ENV PKG_CONFIG_PATH="/opt/python-static/lib/pkgconfig"
